@@ -303,12 +303,7 @@ protected:
   void DetermineSliceOrderIS()
     {
       double image0Origin[3];
-      // HACK: There is a bug in GetOrigin function of DCMTKFileReader that
-      //       always return origin as zero after its first call!
-      //this->m_Headers[0]->GetOrigin(image0Origin);
-      image0Origin[0] = this->m_Origin[0];
-      image0Origin[1] = this->m_Origin[1];
-      image0Origin[2] = this->m_Origin[2];
+      this->m_Headers[0]->GetOrigin(image0Origin);
       std::cout << "Slice 0: " << image0Origin[0] << " "
                 << image0Origin[1] << " " << image0Origin[2] << std::endl;
 
