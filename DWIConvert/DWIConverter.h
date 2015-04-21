@@ -49,9 +49,9 @@ public:
   typedef std::vector<DiffusionVectorType>    DiffusionVecVectorType;
   typedef itk::Matrix<double, 3, 3>           RotationMatrixType;
   typedef itk::Vector<double, 3>              PointType;
-  DWIConverter(DCMTKFileVector &allHeaders,
-               FileNamesContainer &inputFileNames,
-               bool useBMatrixGradientDirections) : m_Headers(allHeaders),
+  DWIConverter(const DCMTKFileVector &allHeaders,
+               const FileNamesContainer &inputFileNames,
+               const bool useBMatrixGradientDirections) : m_Headers(allHeaders),
                                                     m_InputFileNames(inputFileNames),
                                                     m_Rows(0),
                                                     m_Cols(0),
@@ -142,7 +142,9 @@ public:
       // origin
       double origin[3];
       m_Headers[0]->GetOrigin(origin);
-      std::copy(origin,origin+3,this->m_Origin.GetDataPointer());
+      this->m_Origin[0] = origin[0];
+      this->m_Origin[1] = origin[1];
+      this->m_Origin[2] = origin[2];
 
       // a map of ints keyed by the slice location string
       // reported in the dicom file.  The number of slices per
@@ -301,7 +303,12 @@ protected:
   void DetermineSliceOrderIS()
     {
       double image0Origin[3];
-      this->m_Headers[0]->GetOrigin(image0Origin);
+      // HACK: There is a bug in GetOrigin function of DCMTKFileReader that
+      //       always return origin as zero after its first call!
+      //this->m_Headers[0]->GetOrigin(image0Origin);
+      image0Origin[0] = this->m_Origin[0];
+      image0Origin[1] = this->m_Origin[1];
+      image0Origin[2] = this->m_Origin[2];
       std::cout << "Slice 0: " << image0Origin[0] << " "
                 << image0Origin[1] << " " << image0Origin[2] << std::endl;
 
@@ -390,11 +397,11 @@ protected:
   /** add vendor-specific flags; */
   virtual void AddFlagsToDictionary() = 0;
   /** one file reader per DICOM file in dataset */
-  DCMTKFileVector     &m_Headers;
+  const DCMTKFileVector     m_Headers;
   /** the names of all the filenames, needed to use
    *  itk::ImageSeriesReader
    */
-  FileNamesContainer  &m_InputFileNames;
+  const FileNamesContainer  m_InputFileNames;
 
   /** dimensions */
   unsigned short      m_Rows;
@@ -445,7 +452,7 @@ protected:
   /** use the BMatrix to compute gradients in Siemens data instead of
    *  the reported graients. which are in many cases bogus.
    */
-  bool                        m_UseBMatrixGradientDirections;
+  const bool                  m_UseBMatrixGradientDirections;
   /** track if images is interleaved */
   bool                        m_IsInterleaved;
   /** again this is always the same (so far) but someone thought
