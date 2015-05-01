@@ -15,15 +15,9 @@ tc
 .  SetGradientTable()
 .- GetMeasurementFrame()
 .  SetMeasurementFrame(MeasurementFrameType)
-.  GetDimension()
-.  GetSizes()
-.  SetSizes(DimensionVectorType, int)
-.  GetCenterings()
-.  SetCentering(int, str)
 .  GetKindsString()
 .  GetKinds()
 .  SetNonSpatialAxis(int)
-RearrangeDimensions(???)
 .  GetType()
 .  SetType()
 .  GetEndian()
@@ -39,7 +33,7 @@ SetSpaceDirection(SpaceDirectionType)
 GetSpaceUnits()
 GetSpaceOrigin()
 SetSpaceOrigin()
- */
+*/
 #include <cmath>
 #include <cstdio>
 #include <itkImage.h>
@@ -122,7 +116,6 @@ int main(int argc, char * argv[])
     nrrd->spaceOrigin[0] = 8.0;
     nrrd->spaceOrigin[1] = 8.0;
     nrrd->spaceOrigin[2] = 8.0;
-
 
     nrrd->measurementFrame[0][0] =  0.0;
     nrrd->measurementFrame[0][1] = -1.0;
@@ -276,24 +269,23 @@ int main(int argc, char * argv[])
         case nrrdSpaceLeftPosteriorSuperior:
           // in all these cases we could convert
           itk::EncapsulateMetaData< std::string >( thisDict, std::string(key),
-                                              std::string( airEnumStr(nrrdSpace, nrrdSpaceLeftPosteriorSuperior) ) );
+                                                   std::string( airEnumStr(nrrdSpace, nrrdSpaceLeftPosteriorSuperior) ) );
           break;
         default:
           // we're not coming from a space for which the conversion
           // to LPS is well-defined
           itk::EncapsulateMetaData< std::string >( thisDict, std::string(key),
-                                              std::string(val) );
+                                                   std::string(val) );
           break;
         }
       }
 
     double                spacing = 1.0;
     double                spaceDir[NRRD_SPACE_DIM_MAX];
-    // spaceDir[0] =
     std::vector< double > spaceDirStd(domainAxisNum);
     int                   spacingStatus;
+    int                   iFlipFactors[3];  // used to flip the measurement frame later on
 
-    int iFlipFactors[3];  // used to flip the measurement frame later on
     for ( unsigned int iI = 0; iI < 3; iI++ )
       {
       iFlipFactors[iI] = 1;
@@ -349,20 +341,17 @@ int main(int argc, char * argv[])
           break;
         case nrrdSpacingStatusScalarWithSpace:
           itkGenericExceptionMacro("ReadImageInformation: Error interpreting "
-                            "nrrd spacing (nrrdSpacingStatusScalarWithSpace)");
+                                   "nrrd spacing (nrrdSpacingStatusScalarWithSpace)");
           break;
         }
       }
 
     if ( AIR_EXISTS(nrrd->measurementFrame[0][0]) )
       {
-      sprintf( key, "%s%s", KEY_PREFIX,
-               airEnumStr(nrrdField, nrrdField_measurement_frame) );
-
+      sprintf( key, "%s%s", KEY_PREFIX, airEnumStr(nrrdField, nrrdField_measurement_frame) );
       // flip the measurement frame here if we have to
       // so that everything is consistent with the ITK LPS space directions
       // but only do this if we have a three dimensional space or smaller
-
       for ( unsigned int saxi = 0; saxi < domainAxisNum; saxi++ )
         {
         msrFrame[saxi].resize(domainAxisNum);
@@ -379,8 +368,8 @@ int main(int argc, char * argv[])
           }
         }
       itk::EncapsulateMetaData< std::vector< std::vector< double > > >(thisDict,
-                                                                  std::string(key),
-                                                                  msrFrame);
+                                                                       std::string(key),
+                                                                       msrFrame);
       }
     else {
       for ( unsigned int saxi = 0; saxi < domainAxisNum; saxi++ )
@@ -424,7 +413,6 @@ int main(int argc, char * argv[])
   sprintf(tmpStr, " %f", bvalue);
   std::string        value(tmpStr);
   itk::EncapsulateMetaData<std::string>(thisDict, "DWMRI_b-value", value);
-
 /*
     nrrdNix(nrrd);
     }
@@ -436,7 +424,6 @@ int main(int argc, char * argv[])
     throw;
     }
 */
-
   // Test DWIMetaDataDictionaryValidator
   DWIMetaDataDictionaryValidator   myValidator;
   itk::MetaDataDictionary          emptyDict;
@@ -457,7 +444,7 @@ int main(int argc, char * argv[])
     std::cout << "Failed" << std::endl;
     }
   else { std::cout << "passed!" << std::endl; }
-  /*  Print keys and values?
+  //  Print keys and values?
   std::vector<std::string> keys = myDict.GetKeys();
   thisDict.Print(std::cout);
   std::string  outval;
@@ -466,7 +453,7 @@ int main(int argc, char * argv[])
   std::cout << "----------------" << std::endl;
   for (std::vector<std::string>::iterator it = keys.begin() ; it != keys.end(); ++it)
     std::cout << ' ' << *it << " - " << myDict[*it] << std::endl;
-  */
+  //*/
   // *** GetDimension ***
   std::cout << "*** Test: GetNumberOfDimensions ";
   try
@@ -478,10 +465,6 @@ int main(int argc, char * argv[])
     {
     std::cout << "passed!" << std::endl;
     }
-  /*  Currently, metadata in ITK doesn't contain dimensions (stored in itk::Image)
-  if (myValidator.GetNumberOfDimensions() != 4)  { std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-  */
   // *** SetNumberOfDimensions ***
   std::cout << "*** Test: SetNumberOfDimensions ";
   try
@@ -546,85 +529,24 @@ int main(int argc, char * argv[])
   if (newgradients != myValidator.GetGradientTable()) { std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
   // *** GetBValue ***
-  std::cout << " *** Test: GetBValue ";
+  std::cout << "*** Test: GetBValue ";
   if (myValidator.GetBValue() != bvalue ) {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
   // *** SetBValue ***
-  std::cout << " *** Test: SetBValue ";
-  myValidator.SetBValue(500);
-  if (myValidator.GetBValue() != 500 ) {std::cout << "failed!" << std::endl; }
+  std::cout << "*** Test: SetBValue ";
+  double             new_bvalue = 500;
+  myValidator.SetBValue(new_bvalue);
+  if (myValidator.GetBValue() != new_bvalue ) {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
-
-
-/*
-  std::string                           sizeKey = "sizes";  // TODO: guess
-  std::vector<double>                   sizes;
-  sizes[0] = 256;
-  sizes[1] = 256;
-  sizes[2] = 36;
-  sizes[3] = 14;
-  // itk::EncapsulateMetaData<std::vector<double> >(thisDict, sizeKey, sizes);
-  std::string                           centerKey = "centerings";  // TODO: guess
-  std::vector<std::string>              centers(4, "cell");
-  centers[3] = "none";
-  // itk::EncapsulateMetaData<std::vector<double> >(thisDict, centerKey, centers);
-  std::string                           thickKey = "thicknesses";  // TODO: guess
-  std::vector<float>                    thicks(4, NAN);
-  thicks[2] = 3.0;
-  // itk::EncapsulateMetaData<std::vector<double> >(thisDict, thickKey, thicks);
-  std::string                           kindsKey = "kinds";  // TODO: guess
-  std::vector<std::string>              volume_interleaved(4, "space");
-  std::vector<std::string>              slice_interleaved(4, "space");
-  std::vector<std::string>              pixel_interleaved(4, "space");
-  volume_interleaved[3] = "list";
-  slice_interleaved[2] = "list";
-  pixel_interleaved[0] = "list";
-  // itk::EncapsulateMetaData<std::vector<std::string> >(thisDict, kindsKey, volume_interleaved);
-
-  // itk::EncapsulateMetaData<std::string>(thisDict, "type", "short");
-  // itk::EncapsulateMetaData<std::string>(thisDict, "endian", "big");
-  // itk::EncapsulateMetaData<std::string>(thisDict, "encoding", "raw");
-  // itk::EncapsulateMetaData<int>(thisDict, "b-value", 1000);
-  std::string                           RAS = "right-anterior-superior";
-  std::string                           LPS = "left-posterior-superior";
-  // itk::EncapsulateMetaData<std::string>(thisDict, "space", RAS);
-
-  std::vector<std::vector<double> >     spaceDir(3);
-  vnl_matrix_fixed<double, 3, 3>        identity;
-  identity.set_identity();
-
-  char                                  tmp[8];
-  std::string                           spaceDirString;
-  for( unsigned int i = 0; i < 3; i++ )
-    {
-    spaceDirString += "(";
-    spaceDir.resize(3);
-    for( unsigned int j = 0; j < 3; j++ )
-      {
-      sscanf(tmp, "%lf", identity[i][j]);
-      spaceDirString += tmp;
-      spaceDir[i][j] = identity[i][j];
-      }
-    spaceDirString += ") ";
-    }
-  spaceDirString += "none";  // volume interleaved
-  // itk::EncapsulateMetaData<std::string >(thisDict, "space direction", spaceDirString);
-  // myValidator.SetMetaDataDictionary(thisDict);
-
-  // *** GetSizes ***
-  std::cout << " *** Test: GetSizes ";
-  if (myValidator.GetSizes() != sizes)
-    { std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-
   // *** GetCenterings ***
-  std::cout << " *** Test: GetCenterings ";
+  std::array<std::string, 3>       centers;
+  centers[0] = "cell"; centers[1] = "cell"; centers[2] = "cell";
+  std::cout << "*** Test: GetCenterings ";
   if (myValidator.GetCenterings() != centers)
     { std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
-
   // *** SetCentering ***
-  std::cout << " *** Test: SetCentering ";
+  std::cout << "*** Test: SetCentering ";
   bool is_set_centerings_passing = true;
   for (unsigned int i=0; i<3; i++)
     {
@@ -636,100 +558,70 @@ int main(int argc, char * argv[])
       std::cout << "index " << i << "failed!" << std::endl;
       break;
       }
+    try
+      {
+      myValidator.SetCentering(i, "none");  //Should throw an error!
+      is_set_centerings_passing = false;
+      }
+    catch (...)
+      {
+      // do nothing
+      }
     }
   if (is_set_centerings_passing) { std::cout << "passed!" << std::endl; }
-
-  // *** GetThickness ***
-  std::cout << " *** Test: GetThickness ";
-  if (myValidator.GetThickness()[2] != thicks[2] ||
-      ! isnan(myValidator.GetThickness()[0]) ||
-      ! isnan(myValidator.GetThickness()[1]) ||
-      ! isnan(myValidator.GetThickness()[2]) )
+  // *** SetCenterings ***
+  std::cout << "*** Test: SetCenterings ";
+  for (unsigned int i=0; i<3; i++) { centers[i] = "cell"; }
+  myValidator.SetCenterings(centers);
+  if (myValidator.GetCenterings() != centers)
     { std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
-
-  // *** SetThickness ***
-  myValidator.SetThickness(4.5);
-  std::cout << " *** Test: SetThickness ";
-  if (myValidator.GetThickness()[2] != 4.5 ||
-      ! isnan(myValidator.GetThickness()[0]) ||
-      ! isnan(myValidator.GetThickness()[1]) ||
-      ! isnan(myValidator.GetThickness()[2]) )
-    { std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-
+  // *** GetKinds ***
+  std::array<std::string, 4>              volume_interleaved;
+  std::array<std::string, 4>              slice_interleaved;
+  std::array<std::string, 4>              pixel_interleaved;
+  volume_interleaved[0] = "space";  volume_interleaved[1] = "space";
+  volume_interleaved[2] = "space";  volume_interleaved[3] = "list";
+  slice_interleaved[0] = "space";   slice_interleaved[1] = "space";
+  slice_interleaved[2] = "list";    slice_interleaved[3] = "space";
+  pixel_interleaved[0] = "list";    pixel_interleaved[0] = "space";
+  pixel_interleaved[0] = "space";   pixel_interleaved[0] = "space";
   // *** GetKinds: volume ***
-  std::cout << " *** Test: GetKinds (volume) ";
-    if (myValidator.GetKinds() != volume_interleaved) {std::cout << "failed!" << std::endl; }
+  std::cout << "*** Test: GetKinds (volume) ";
+  // WHY DOESN'T METADATA HAVE 4 NRRD_Kinds KEYS!?!
+  if (myValidator.GetKinds() != volume_interleaved) {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
   // *** GetKindsString: volume ***
-  std::cout << " *** Test: GetKindsString (volume) "
+  std::cout << "*** Test: GetKindsString (volume) ";
   if (myValidator.GetKindsString() != "volume interleaved") {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
-
-  myValidator.SetNonSpatialAxis(2);  // TODO: myValidator.SetSliceInterleaved()
   // *** GetKinds: slice ***
-  std::cout << " *** Test: GetKinds (slice) "
+  std::cout << " *** Test: GetKinds (slice) ";
     if (myValidator.GetKinds() != slice_interleaved) {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
   // *** GetKindsString: slice ***
-  std::cout << " *** Test: GetKindsString (slice) "
+  std::cout << " *** Test: GetKindsString (slice) ";
   if (myValidator.GetKindsString() != "slice interleaved") {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
-
-  myValidator.SetNonSpatialAxis(0); // TODO: myValidator.SetPixelInterleaved()
-  // *** GetKinds (pixel) ***
-  std::cout << " *** Test: GetKinds (pixel) "
-    if (myValidator.GetKinds() != pixel_interleaved) {std::cout << "failed!" << std::endl; }
+  // *** GetKinds: pixel ***
+  std::cout << " *** Test: GetKinds (pixel) ";
+  if (myValidator.GetKinds() != pixel_interleaved) {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
   // *** GetKindsString: pixel ***
-  std::cout << " *** Test: GetKindsString (pixel) "
+  std::cout << " *** Test: GetKindsString (pixel) ";
   if (myValidator.GetKindsString() != "pixel interleaved") {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
-
-  myValidator.SetNonSpatialAxis(3); // TODO: myValidator.SetVolumeInterleaved()
   // *** GetKinds ***
-  std::cout << " *** Test: GetKinds (volume)(2) "
+  std::cout << " *** Test: GetKinds (volume)(2) ";
   if (myValidator.GetKinds() != volume_interleaved) {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
   // *** GetKindsString: volume (2) ***
-  std::cout << " *** Test: GetKindsString(volume)(2) "
+  std::cout << " *** Test: GetKindsString(volume)(2) ";
   if (myValidator.GetKindsString() != "volume interleaved") {std::cout << "failed!" << std::endl; }
   else { std::cout << "passed!" << std::endl; }
-
-  // *** GetType ***
-  std::cout << " *** Test: GetType ";
-  if (myValidator.GetType() != "short" ) {std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-
-  // *** SetType ***
-  std::cout << " *** Test: SetType ";
-  myValidator.SetType("long");
-  if (myValidator.GetType() != "long" ) {std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-
-  // *** GetEndian ***
-  std::cout << " *** Test: GetEndian ";
-  if (myValidator.GetEndian() != "big" ) {std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-
-  // *** SetEndian ***
-  std::cout << " *** Test: SetEndian ";
-  myValidator.SetEndian("little");
-  if (myValidator.GetEndian() != "little" ) {std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-
-  // *** GetEncoding ***
-  std::cout << " *** Test: GetEncoding ";
-  if (myValidator.GetEncoding() != "raw" ) {std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-
-  // *** SetEncoding ***
-  std::cout << " *** Test: SetEncoding ";
-  myValidator.SetEncoding("ascii");
-  if (myValidator.GetEncoding() != "ascii" ) {std::cout << "failed!" << std::endl; }
-  else { std::cout << "passed!" << std::endl; }
-
+/*
+  std::string                           RAS = "right-anterior-superior";
+  std::string                           LPS = "left-posterior-superior";
   // *** GetAnatomicalSpace ***
   std::cout << " *** Test: GetAnatomicalSpace ";
   if (myValidator.GetAnatomicalSpace() != RAS ) {std::cout << "failed!" << std::endl; }
@@ -779,14 +671,6 @@ int main(int argc, char * argv[])
   // TODO: GetSizes after SetKinds
   std::cout << "-------------" << std::endl;
 
-  typedef GradientVectorType::iterator                        MyIter;
-  GradientVectorType gradient = myValidator.GetGradient(1);
-  for (MyIter i=std::begin(gradient); i != std::end(gradient); i++)
-    {
-    std::cout << i << " ";
-    }
-  std::cout << std::endl;
-
   // Set "units"
   myValidator.SetUnits( 'mm' );
 
@@ -812,40 +696,6 @@ int main(int argc, char * argv[])
   // Note that inside the validator, "space directions" is created from SetSpaceDirection and SetInterleaved
   // The same fact holds for "thicknesses"
   // Also, there is no direct need for SetCenterings and SetKinds, since they are created from SetInterleaved
-
-  // Set "DWMRI__gradient_xxxx"
-  typedef std::array<double,3>       GradientDirType;
-  typedef std::vector< GradientDir > GradientDirTableType;
-  GradientDirType       myGradient;
-  GradientDirTableType  myGradientTable;
-  myGradientTable.Reserve( nrrdVolume->GetVectorLength() )
-  // #0 -> b0
-  myGradient[0] = 0; myGradient[1] = 0; myGradient[2] = 0;
-  myGradientTable.push_back( myGradient );
-  // #1
-  myGradient[0] = 1; myGradient[1] = 0; myGradient[2] = 0;
-  myGradientTable.push_back( myGradient );
-  // #2
-  myGradient[0] = 0; myGradient[1] = 1; myGradient[2] = 0;
-  myGradientTable.push_back( myGradient );
-  // #3
-  myGradient[0] = 0; myGradient[1] = 0; myGradient[2] = 1;
-  myGradientTable.push_back( myGradient );
-  // #4 -> b0
-  myGradient[0] = 0; myGradient[1] = 0; myGradient[2] = 0;
-  myGradientTable.push_back( myGradient );
-  // #5
-  myGradient[0] = 0.5; myGradient[1] = 0; myGradient[2] = 0;
-  myGradientTable.push_back( myGradient );
-  // #6
-  myGradient[0] = 0; myGradient[1] = 0.5; myGradient[2] = 0;
-  myGradientTable.push_back( myGradient );
-  // #7
-  myGradient[0] = 0; myGradient[1] = 0; myGradient[2] = 0.5;
-  myGradientTable.push_back( myGradient );
-
-  myValidator.ClearAllGradients();
-  myValidator.SetAllGradients( myGradientTable );
 
   // Add meta data to nrrd volume
   nrrdVolume->SetMetaDataDictionary(myValidator->GetMetaDataDictionary());

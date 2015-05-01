@@ -49,6 +49,7 @@ class DWIMetaDataDictionaryValidator
 
  protected:
   std::string GetGradientKeyString(int);
+  std::string GetIndexedKeyString(std::string, int);
 
  public:
   // 3D
@@ -91,34 +92,21 @@ class DWIMetaDataDictionaryValidator
   void DeleteGradientTable();
   // b-value
   double GetBValue();
-  void SetBValue(const int);
   void SetBValue(const double);
-  /*
-  // sizes
-  Integer3x1ArrayType GetSizes();
-  void SetSizes(const Integer3x1ArrayType);
   // centering
-  StringVectorType GetCenterings();
+  String3x1ArrayType GetCenterings();
   void SetCentering(const int, const std::string);
-  void SetCentering(const int, const int);  // use NrrdIO.h enum
-  void SetCenterings(const Integer3x1ArrayType);
-  void SetCenterings(const String3x1ArrayType);
+  void SetCenterings(const String3x1ArrayType & );
   // kinds
-  int GetKind(const int);
-  Integer4x1ArrayType GetKinds();
+  std::string GetKind(const int);
   String4x1ArrayType GetKinds();
-  void SetNonSpatialAxis(const int);
-  void RearrangeDimensions(const Integer4x1ArrayType);  // [2, 1, 0, 3]
+  std::string GetKindsString();
+  /*
   // type
   int GetType();
   std::string GetType();
   void SetType(const std::string);
   void SetType(const int);
-  // endian
-  int GetEndian();
-  std::string GetEndian();
-  void SetEndian(const std::string);
-  void SetEndian(const int);
   // encoding
   int GetEncoding();
   std::string GetEncoding();

@@ -49,6 +49,14 @@ std::string DWIMetaDataDictionaryValidator::GetGradientKeyString(int index)
   return key;
 }
 
+std::string DWIMetaDataDictionaryValidator::GetIndexedKeyString(std::string keyStr, int index)
+{
+  char               tmpStr[64];
+  sprintf(tmpStr, "NRRD_%s[%d]", keyStr.c_str(), index);
+  std::string key(tmpStr);
+  return key;
+}
+
 void DWIMetaDataDictionaryValidator::SetKey(std::string key, std::string value)
 {
   itk::EncapsulateMetaData<std::string>(m_dict, key, value);
@@ -135,14 +143,11 @@ DWIMetaDataDictionaryValidator::Double3x1ArrayType DWIMetaDataDictionaryValidato
 {
      DWIMetaDataDictionaryValidator::Double3x1ArrayType   currentGradient;
      std::string key = DWIMetaDataDictionaryValidator::GetGradientKeyString(index);
-     // m_dict.Print(std::cout);
      if (m_dict.HasKey(key))
        {
        std::string   NrrdValue;
        itk::ExposeMetaData<std::string>(m_dict, key, NrrdValue);
-       // std::cout << "NrrdValue: " << NrrdValue.c_str() << std::endl;
        sscanf(NrrdValue.c_str(), "%lf %lf %lf", &currentGradient[0], &currentGradient[1], &currentGradient[2]);
-       // std::cout << currentGradient[0] << "," << currentGradient[1] << "," << currentGradient[2] << std::endl;
        }
      else
        {
@@ -182,10 +187,8 @@ int DWIMetaDataDictionaryValidator::GetGradientCount()
 
 DWIMetaDataDictionaryValidator::GradientTableType DWIMetaDataDictionaryValidator::GetGradientTable()
    {
-     // std::cout << "GetGradientTable" << std::endl;
      DWIMetaDataDictionaryValidator::GradientTableType myGradientTable;
      DWIMetaDataDictionaryValidator::StringVectorType allKeys = m_dict.GetKeys();
-     // std::cout << allKeys[0] << std::endl;
      int count = 0;
      for (DWIMetaDataDictionaryValidator::StringVectorType::iterator it = allKeys.begin();
           it != allKeys.end();
@@ -205,23 +208,17 @@ DWIMetaDataDictionaryValidator::GradientTableType DWIMetaDataDictionaryValidator
 
 void DWIMetaDataDictionaryValidator::SetGradientTable(DWIMetaDataDictionaryValidator::GradientTableType & myGradientTable)
      {
-     std::stringstream outputGradDirMetaDataStream;
-     DWIMetaDataDictionaryValidator::StringVectorType keys = m_dict.GetKeys();
-     //for (int i = 0; i < keys.size(); )
-     int count = 0;
-     while (!myGradientTable.empty())
+       int count = 0;
+     for (DWIMetaDataDictionaryValidator::GradientTableType::iterator it = myGradientTable.begin(); it != myGradientTable.end(); ++it)
        {
-       DWIMetaDataDictionaryValidator::Double3x1ArrayType currentGradient = myGradientTable.back();
-       DWIMetaDataDictionaryValidator::SetGradient(count, currentGradient);
-       myGradientTable.pop_back();
-       count++;
+       DWIMetaDataDictionaryValidator::SetGradient(count++, *it);
        }
-
-     std::string nextKey = DWIMetaDataDictionaryValidator::GetGradientKeyString(++count);
+     // Remove additional gradients
+     std::string nextKey = DWIMetaDataDictionaryValidator::GetGradientKeyString(count++);
      while (m_dict.HasKey(nextKey))
        {
        m_dict.Erase(nextKey);
-       std::string nextKey = DWIMetaDataDictionaryValidator::GetGradientKeyString(++count);
+       std::string nextKey = DWIMetaDataDictionaryValidator::GetGradientKeyString(count++);
        }
      }
 
@@ -252,12 +249,6 @@ double DWIMetaDataDictionaryValidator::GetBValue()
   return retval;
 }
 
-void DWIMetaDataDictionaryValidator::SetBValue(const int bvalue)
-{
-  double            value(bvalue);
-  DWIMetaDataDictionaryValidator::SetBValue(value);  // TODO: Should template this?
-}
-
 void DWIMetaDataDictionaryValidator::SetBValue(const double bvalue)
 {
   std::string        key = "DWMRI_b-value";
@@ -265,6 +256,93 @@ void DWIMetaDataDictionaryValidator::SetBValue(const double bvalue)
   sprintf(tmpStr, "%f", bvalue);
   std::string        valstr(tmpStr);
   DWIMetaDataDictionaryValidator::SetKey(key, valstr);
+}
+
+DWIMetaDataDictionaryValidator::String3x1ArrayType DWIMetaDataDictionaryValidator::GetCenterings()
+{
+  DWIMetaDataDictionaryValidator::String3x1ArrayType retval;
+  for (unsigned int i=0; i<3; i++)
+    {
+    std::string    key = DWIMetaDataDictionaryValidator::GetIndexedKeyString("centerings", i);
+    itk::ExposeMetaData<std::string >(m_dict, key, retval[i]);
+    }
+  return retval;
+}
+void DWIMetaDataDictionaryValidator::SetCentering(const int index, const std::string type)
+{
+  if (type == "cell" || type == "node")
+    {
+    std::string    key = DWIMetaDataDictionaryValidator::GetIndexedKeyString("centerings", index);
+    DWIMetaDataDictionaryValidator::SetKey(key, type);
+    }
+  else if (type == "none" || type == "???")
+    {
+    itkGenericExceptionMacro("Cannot remove the centering of a spacial dimension!");
+    }
+  else
+    {
+    itkGenericExceptionMacro("Unknown centering value!");
+    }
+}
+
+void DWIMetaDataDictionaryValidator::SetCenterings(const DWIMetaDataDictionaryValidator::String3x1ArrayType & centers)
+{
+  for (unsigned int i=0; i<3; i++)
+    {
+    DWIMetaDataDictionaryValidator::SetCentering(i, centers[i]);
+    }
+}
+
+std::string DWIMetaDataDictionaryValidator::GetKind(const int index)
+{
+  std::string    retval;
+  std::string    key = DWIMetaDataDictionaryValidator::GetIndexedKeyString("kinds", index);
+  itk::ExposeMetaData<std::string >(m_dict, key, retval);
+  return retval;
+}
+
+DWIMetaDataDictionaryValidator::String4x1ArrayType DWIMetaDataDictionaryValidator::GetKinds()
+{
+  // This REQUIRES 4 NRRD_kinds[*] keys in the metadata!
+  DWIMetaDataDictionaryValidator::String4x1ArrayType   retval;
+  for (unsigned int i=0; i<4; i++)
+    {
+    std::string    key = DWIMetaDataDictionaryValidator::GetIndexedKeyString("kinds", i);
+    itk::ExposeMetaData<std::string >(m_dict, key, retval[i]);
+    }
+  return retval;
+}
+
+std::string DWIMetaDataDictionaryValidator::GetKindsString()
+{
+  std::string    retval;
+  DWIMetaDataDictionaryValidator::String4x1ArrayType  volume_interleaved;
+  for (unsigned int i=0; i<4; i++)
+    {
+    volume_interleaved[i] = "space";
+    }
+  DWIMetaDataDictionaryValidator::String4x1ArrayType  slice_interleaved = volume_interleaved;
+  DWIMetaDataDictionaryValidator::String4x1ArrayType  pixel_interleaved = volume_interleaved;
+  volume_interleaved[3] = "list";
+  slice_interleaved[2] = "list";
+  pixel_interleaved[0] = "list";
+  DWIMetaDataDictionaryValidator::String4x1ArrayType  kinds = DWIMetaDataDictionaryValidator::GetKinds();
+  if (kinds == volume_interleaved)
+    {
+    return "volume_interleaved";
+    }
+  else if (kinds == slice_interleaved)
+    {
+    return "slice_interleaved";
+    }
+  else if (kinds == pixel_interleaved)
+    {
+    return "pixel_interleaved";
+    }
+  else
+    {
+    itkGenericExceptionMacro("Unknown interleaving!");
+    }
 }
 
 /*
